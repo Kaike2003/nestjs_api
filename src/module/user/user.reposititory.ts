@@ -4,21 +4,41 @@ import { PrismaService } from 'src/prisma.service';
 import { Response } from 'express';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UpdateEmailUserDto } from './dto/update-email-user.dto';
+import { PasswordService } from 'src/password.service';
 
 @Injectable()
 export class UserRepository extends PrismaService {
+
+    constructor(private passwordService: PasswordService) {
+        super()
+    }
+
+
+    private async verifyuser(email: string, id?: string) {
+
+        if (email === null) {
+            return await this.user.findUnique({
+                where: {
+                    id: id
+                }
+            })
+        } else {
+            return await this.user.findUnique({
+                where: {
+                    email: email
+                }
+            })
+        }
+
+    }
 
     async create(createUserDto: CreateUserDto) {
 
         const { email, firstname, lastname, password, username } = createUserDto
 
-        const verifyemail = await this.user.findUnique({
-            where: {
-                email: email
-            }
-        })
+        const user = await this.verifyuser(email)
 
-        if (verifyemail === null) {
+        if (user === null) {
 
             return await this.user.create({
                 data: {
@@ -26,7 +46,7 @@ export class UserRepository extends PrismaService {
                     firstname: firstname,
                     lastname: lastname,
                     username: username,
-                    password: password,
+                    password: await this.passwordService.encript(password),
                 }
             })
                 .then(async success => {
@@ -52,13 +72,9 @@ export class UserRepository extends PrismaService {
 
     async findOne(id: string) {
 
-        const verifyid = await this.user.findUnique({
-            where: {
-                id: id
-            }
-        })
+        const user = await this.verifyuser(null, id)
 
-        if (verifyid === null) {
+        if (user === null) {
             throw new BadRequestException(`O id do usuario está inválido.`)
         } else {
 
@@ -79,13 +95,9 @@ export class UserRepository extends PrismaService {
 
     async findEmail(email: string) {
 
-        const verifyemail = await this.user.findUnique({
-            where: {
-                email: email
-            }
-        })
+        const user = await this.verifyuser(email)
 
-        if (verifyemail === null) {
+        if (user === null) {
             throw new BadRequestException(`O ${email} email digitado não existe.`)
         } else {
 
@@ -108,14 +120,9 @@ export class UserRepository extends PrismaService {
 
         const { firstname, lastname, password, username } = updateUserDto
 
+        const user = await this.verifyuser(null, id)
 
-        const verifyid = await this.user.findUnique({
-            where: {
-                id: id
-            }
-        })
-
-        if (verifyid === null) {
+        if (user === null) {
             throw new BadRequestException(`O id do usuário está inválido.`)
         } else {
 
@@ -143,13 +150,9 @@ export class UserRepository extends PrismaService {
 
         const { email } = updateEmailUserDto
 
-        const verifyid = await this.user.findUnique({
-            where: {
-                email: email
-            }
-        })
+        const user = await this.verifyuser(email)
 
-        if (verifyid === null) {
+        if (user === null) {
 
             await this.user.update({
                 where: {

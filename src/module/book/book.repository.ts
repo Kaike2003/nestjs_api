@@ -6,7 +6,7 @@ import { UpdateBookDto } from './dto/update-book.dto';
 @Injectable()
 export class BookRepository extends PrismaService {
 
-    async verifyuser(id: string) {
+    private async verifyuser(id: string) {
         const verifyid = await this.user.findUnique({
             where: {
                 id: id
@@ -16,7 +16,7 @@ export class BookRepository extends PrismaService {
         return verifyid
     }
 
-    async verifybook(id: string) {
+    private async verifybook(id: string) {
         const verifyid = await this.book.findUnique({
             where: {
                 id: id
